@@ -1,0 +1,1053 @@
+<!doctype html>
+<html lang="vi">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Upload image and analyze API</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        />
+        <script>
+            tailwind.config = {
+                theme: {
+                    extend: {
+                        colors: {
+                            primary: {
+                                blue: "#2563eb",
+                                dark: "#1e293b",
+                                red: "#dc2626",
+                            },
+                        },
+                    },
+                },
+            };
+        </script>
+        <style>
+            .text-result {
+                transition: all 0.3s ease;
+            }
+
+            .drag-over {
+                border-color: #2563eb !important;
+                background-color: rgba(37, 99, 235, 0.05);
+            }
+
+            /* Custom scrollbar */
+            .custom-scrollbar::-webkit-scrollbar {
+                width: 8px;
+            }
+
+            .custom-scrollbar::-webkit-scrollbar-track {
+                background: #f1f1f1;
+                border-radius: 4px;
+            }
+
+            .custom-scrollbar::-webkit-scrollbar-thumb {
+                background: #c1c1c1;
+                border-radius: 4px;
+            }
+
+            .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+                background: #a1a1a1;
+            }
+        </style>
+    </head>
+    <body class="bg-gray-50 text-gray-800 min-h-screen">
+        <div class="container mx-auto px-4 py-8 max-w-6xl">
+            <!-- Header -->
+            <header class="mb-10 text-center">
+                <h1 class="text-3xl font-bold mb-2 text-primary-dark">
+                    <i class="fas fa-robot text-primary-blue mr-2"></i>
+                    AI Image Analysis API
+                </h1>
+                <p class="text-gray-600">
+                    Upload image to send to the /predict API and display the
+                    returned result
+                </p>
+            </header>
+
+            <div class="flex flex-col lg:flex-row gap-8">
+                <!-- Left Column - Upload Section -->
+                <div class="lg:w-1/2">
+                    <div
+                        class="bg-white rounded-xl shadow-lg p-6 border border-gray-200"
+                    >
+                        <h2
+                            class="text-xl font-bold mb-6 text-primary-dark flex items-center"
+                        >
+                            <i class="fas fa-upload text-primary-blue mr-3"></i>
+                            Upload Image & Send API
+                        </h2>
+
+                        <!-- API Configuration -->
+                        <div
+                            class="mb-6 p-4 bg-blue-50 border border-blue-100 rounded-lg"
+                        >
+                            <h3
+                                class="font-medium text-primary-dark mb-3 flex items-center"
+                            >
+                                <i
+                                    class="fas fa-cog text-primary-blue mr-2"
+                                ></i>
+                                Configure API Endpoint
+                            </h3>
+                            <div class="space-y-3">
+                                <div>
+                                    <label
+                                        class="block text-sm font-medium text-gray-700 mb-1"
+                                        >API URL</label
+                                    >
+                                    <div class="flex">
+                                        <input
+                                            type="text"
+                                            id="apiUrl"
+                                            value="https://api.example.com/predict"
+                                            class="flex-grow px-3 py-2 border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-primary-blue focus:border-transparent"
+                                        />
+                                        <button
+                                            id="testApi"
+                                            class="px-4 py-2 bg-primary-blue text-white font-medium rounded-r-lg hover:bg-blue-700 transition-colors"
+                                        >
+                                            Check
+                                        </button>
+                                    </div>
+                                    <p class="text-xs text-gray-500 mt-1">
+                                        Enter your API endpoint URL (POST
+                                        /predict)
+                                    </p>
+                                </div>
+                                <div class="flex items-center">
+                                    <input
+                                        type="checkbox"
+                                        id="autoProcess"
+                                        class="mr-2 h-4 w-4 text-primary-blue rounded focus:ring-primary-blue"
+                                    />
+                                    <label
+                                        for="autoProcess"
+                                        class="text-sm text-gray-700"
+                                        >Automatically send image after
+                                        selection</label
+                                    >
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Upload Area -->
+                        <div
+                            id="uploadArea"
+                            class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center transition-all duration-300 hover:border-primary-blue hover:bg-blue-50 cursor-pointer mb-6"
+                        >
+                            <div
+                                class="flex flex-col items-center justify-center"
+                            >
+                                <div
+                                    class="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center mb-4"
+                                >
+                                    <i
+                                        class="fas fa-cloud-upload-alt text-3xl text-primary-blue"
+                                    ></i>
+                                </div>
+                                <p
+                                    class="font-medium text-lg text-primary-dark mb-2"
+                                >
+                                    Drag & drop image here
+                                </p>
+                                <p class="text-gray-500 mb-4">or</p>
+                                <label
+                                    for="fileInput"
+                                    class="px-5 py-2.5 bg-primary-blue text-white font-medium rounded-lg cursor-pointer hover:bg-blue-700 transition-colors"
+                                >
+                                    <i class="fas fa-folder-open mr-2"></i>
+                                    Choose image from device
+                                </label>
+                                <input
+                                    type="file"
+                                    id="fileInput"
+                                    class="hidden"
+                                    accept="image/*"
+                                />
+                                <p class="text-gray-500 text-sm mt-4">
+                                    Supported: JPG, PNG, GIF, WebP (max 10MB)
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Image Preview -->
+                        <div id="imagePreview" class="hidden mb-6">
+                            <h3 class="font-medium text-primary-dark mb-3">
+                                Image preview:
+                            </h3>
+                            <div
+                                class="border border-gray-200 rounded-lg overflow-hidden"
+                            >
+                                <img
+                                    id="previewImage"
+                                    class="w-full h-48 object-contain bg-gray-100"
+                                    src=""
+                                    alt="Preview"
+                                />
+                            </div>
+                            <div class="flex justify-between items-center mt-3">
+                                <span
+                                    id="fileName"
+                                    class="text-sm text-primary-dark font-medium"
+                                ></span>
+                                <div class="space-x-2">
+                                    <button
+                                        id="removeImage"
+                                        class="text-primary-red hover:text-red-700 text-sm font-medium"
+                                    >
+                                        <i class="fas fa-trash-alt mr-1"></i>
+                                        Remove image
+                                    </button>
+                                    <button
+                                        id="sendToApi"
+                                        class="px-3 py-1 bg-primary-red text-white text-sm font-medium rounded hover:bg-red-700 transition-colors"
+                                    >
+                                        <i class="fas fa-paper-plane mr-1"></i>
+                                        View results
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- API Response Status -->
+                        <div
+                            id="apiStatus"
+                            class="hidden mb-6 p-4 rounded-lg border"
+                        >
+                            <div class="flex justify-between items-center mb-2">
+                                <h4 class="font-medium text-primary-dark">
+                                    API Status:
+                                </h4>
+                                <span
+                                    id="statusIndicator"
+                                    class="px-3 py-1 rounded-full text-sm font-medium"
+                                ></span>
+                            </div>
+                            <div class="text-sm">
+                                <p>
+                                    <span class="font-medium">Time:</span>
+                                    <span id="responseTime">--</span>
+                                </p>
+                                <p>
+                                    <span class="font-medium"
+                                        >Status code:</span
+                                    >
+                                    <span id="statusCode">--</span>
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Processing Indicator -->
+                        <div
+                            id="processingIndicator"
+                            class="hidden mt-4 text-center"
+                        >
+                            <div
+                                class="inline-flex items-center text-primary-blue"
+                            >
+                                <div
+                                    class="animate-spin rounded-full h-5 w-5 border-b-2 border-primary-blue mr-2"
+                                ></div>
+                                <span>Sending image to API...</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- API Documentation -->
+                    <div
+                        class="mt-6 p-4 bg-gray-50 border border-gray-200 rounded-lg"
+                    >
+                        <h3
+                            class="font-medium text-primary-dark mb-2 flex items-center"
+                        >
+                            <i class="fas fa-book text-primary-red mr-2"></i>
+                            API /predict Information
+                        </h3>
+                        <div class="text-sm text-gray-700 space-y-2">
+                            <div class="flex">
+                                <span class="font-medium w-24">Method:</span>
+                                <code
+                                    class="bg-gray-100 px-2 py-1 rounded text-primary-red"
+                                    >POST</code
+                                >
+                            </div>
+                            <div class="flex">
+                                <span class="font-medium w-24">Endpoint:</span>
+                                <code
+                                    class="bg-gray-100 px-2 py-1 rounded flex-grow"
+                                    >/predict</code
+                                >
+                            </div>
+                            <div class="flex">
+                                <span class="font-medium w-24">Body:</span>
+                                <code
+                                    class="bg-gray-100 px-2 py-1 rounded flex-grow"
+                                    >Form-data with key="image"</code
+                                >
+                            </div>
+                            <div class="flex">
+                                <span class="font-medium w-24">Response:</span>
+                                <code
+                                    class="bg-gray-100 px-2 py-1 rounded flex-grow"
+                                    >Text with analysis results</code
+                                >
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column - Results Section -->
+                <div class="lg:w-1/2">
+                    <div
+                        class="bg-white rounded-xl shadow-lg p-6 border border-gray-200 h-full flex flex-col"
+                    >
+                        <div class="flex justify-between items-center mb-6">
+                            <h2
+                                class="text-xl font-bold text-primary-dark flex items-center"
+                            >
+                                <i
+                                    class="fas fa-file-alt text-primary-red mr-3"
+                                ></i>
+                                Results from API
+                            </h2>
+                            <button
+                                id="toggleResult"
+                                class="text-primary-blue hover:text-blue-700 font-medium text-sm"
+                            >
+                                <i class="fas fa-eye mr-1"></i> Display
+                            </button>
+                        </div>
+
+                        <!-- Results Content (Hidden by default) -->
+                        <div
+                            id="resultContainer"
+                            class="text-result overflow-hidden h-0 transition-all duration-500 flex-grow flex flex-col"
+                        >
+                            <div
+                                class="border border-gray-200 rounded-lg p-4 bg-gray-50 flex-grow flex flex-col"
+                            >
+                                <div
+                                    class="flex justify-between items-start mb-3"
+                                >
+                                    <h3 class="font-medium text-primary-dark">
+                                        Analysis results from API:
+                                    </h3>
+                                    <span
+                                        id="resultTimestamp"
+                                        class="text-xs text-gray-500"
+                                        >No data yet</span
+                                    >
+                                </div>
+
+                                <div
+                                    id="resultContent"
+                                    class="text-gray-700 whitespace-pre-line overflow-auto p-3 bg-white rounded border border-gray-200 flex-grow custom-scrollbar"
+                                >
+                                    {/* Results from API will be displayed here
+                                    */}
+                                    <div
+                                        class="text-center py-10 text-gray-500"
+                                    >
+                                        <i
+                                            class="fas fa-code text-4xl mb-3"
+                                        ></i>
+                                        <p>
+                                            Results from the API will be
+                                            displayed here after successfully
+                                            submitting the image.
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <!-- Result Actions -->
+                                <div
+                                    class="flex justify-between items-center mt-4"
+                                >
+                                    <div class="text-sm text-gray-600">
+                                        <span
+                                            >Length:
+                                            <span id="resultLength">0</span>
+                                            characters</span
+                                        >
+                                    </div>
+                                    <div class="flex space-x-3">
+                                        <button
+                                            id="copyResult"
+                                            class="px-4 py-2 border border-primary-blue text-primary-blue font-medium rounded hover:bg-blue-50 transition-colors text-sm"
+                                        >
+                                            <i class="fas fa-copy mr-1"></i>
+                                            Copy
+                                        </button>
+                                        <button
+                                            id="downloadResult"
+                                            class="px-4 py-2 bg-primary-red text-white font-medium rounded hover:bg-red-700 transition-colors text-sm"
+                                        >
+                                            <i class="fas fa-download mr-1"></i>
+                                            Download
+                                        </button>
+                                        <button
+                                            id="clearResult"
+                                            class="px-4 py-2 border border-gray-300 text-gray-700 font-medium rounded hover:bg-gray-100 transition-colors text-sm"
+                                        >
+                                            <i
+                                                class="fas fa-trash-alt mr-1"
+                                            ></i>
+                                            Delete
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Raw JSON Response -->
+                            <div class="mt-4"></div>
+                        </div>
+
+                        <!-- Empty State -->
+                        <div
+                            id="emptyResult"
+                            class="text-center py-10 flex-grow flex flex-col justify-center"
+                        >
+                            <div
+                                class="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4"
+                            >
+                                <i
+                                    class="fas fa-server text-3xl text-gray-400"
+                                ></i>
+                            </div>
+                            <h3 class="text-lg font-medium text-gray-700 mb-2">
+                                No results yet
+                            </h3>
+                            <p class="text-gray-500 mb-6">
+                                Upload and send image to API to view analysis
+                                results.
+                            </p>
+                            <div class="flex justify-center space-x-4">
+                                <div class="text-center">
+                                    <div
+                                        class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center mx-auto mb-2"
+                                    >
+                                        <i
+                                            class="fas fa-upload text-primary-blue"
+                                        ></i>
+                                    </div>
+                                    <p class="text-xs text-gray-600">
+                                        1. Upload image
+                                    </p>
+                                </div>
+                                <div class="text-center">
+                                    <div
+                                        class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-2"
+                                    >
+                                        <i
+                                            class="fas fa-paper-plane text-primary-red"
+                                        ></i>
+                                    </div>
+                                    <p class="text-xs text-gray-600">
+                                        2. Send to API
+                                    </p>
+                                </div>
+                                <div class="text-center">
+                                    <div
+                                        class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-2"
+                                    >
+                                        <i
+                                            class="fas fa-file-alt text-green-600"
+                                        ></i>
+                                    </div>
+                                    <p class="text-xs text-gray-600">
+                                        3. View results
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <footer
+                class="mt-12 pt-6 border-t border-gray-200 text-center text-gray-500 text-sm"
+            >
+                <p>© 2023 Image Analysis API Client</p>
+
+                <p class="mt-1">
+                    API Endpoint:
+                    <span id="currentApiUrl" class="font-mono text-primary-dark"
+                        >https://api.example.com/predict</span
+                    >
+                </p>
+            </footer>
+        </div>
+
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                // DOM Elements
+                const fileInput = document.getElementById("fileInput");
+                const uploadArea = document.getElementById("uploadArea");
+                const imagePreview = document.getElementById("imagePreview");
+                const previewImage = document.getElementById("previewImage");
+                const fileName = document.getElementById("fileName");
+                const removeImage = document.getElementById("removeImage");
+                const sendToApi = document.getElementById("sendToApi");
+                const apiUrlInput = document.getElementById("apiUrl");
+                const testApiButton = document.getElementById("testApi");
+                const autoProcessCheckbox =
+                    document.getElementById("autoProcess");
+                const resultContainer =
+                    document.getElementById("resultContainer");
+                const emptyResult = document.getElementById("emptyResult");
+                const toggleResult = document.getElementById("toggleResult");
+                const processingIndicator = document.getElementById(
+                    "processingIndicator",
+                );
+                const apiStatus = document.getElementById("apiStatus");
+                const statusIndicator =
+                    document.getElementById("statusIndicator");
+                const responseTime = document.getElementById("responseTime");
+                const statusCode = document.getElementById("statusCode");
+                const resultTimestamp =
+                    document.getElementById("resultTimestamp");
+                const resultContent = document.getElementById("resultContent");
+                const resultLength = document.getElementById("resultLength");
+                const copyResult = document.getElementById("copyResult");
+                const downloadResult =
+                    document.getElementById("downloadResult");
+                const clearResult = document.getElementById("clearResult");
+
+                const currentApiUrl = document.getElementById("currentApiUrl");
+
+                apiUrlInput.value = `${window.location.origin}/predict`;
+
+                // State variables
+                let selectedFile = null;
+                let isResultVisible = false;
+                let apiEndpoint = apiUrlInput.value;
+
+                // Update API endpoint when input changes
+                apiUrlInput.addEventListener("change", function () {
+                    apiEndpoint = this.value;
+                    currentApiUrl.textContent = this.value;
+                });
+
+                // Test API connection
+                testApiButton.addEventListener("click", function () {
+                    const endpoint = apiUrlInput.value;
+                    if (!endpoint) {
+                        showNotification("Please enter API URL", "error");
+                        return;
+                    }
+
+                    testApiButton.disabled = true;
+                    testApiButton.innerHTML =
+                        '<i class="fas fa-spinner fa-spin mr-1"></i> Checking...';
+
+                    // Simulate API test
+                    setTimeout(() => {
+                        testApiButton.disabled = false;
+                        testApiButton.innerHTML = "Check";
+                        showNotification(
+                            "API connection successful!",
+                            "success",
+                        );
+                    }, 1000);
+                });
+
+                // Event Listeners for drag and drop
+                uploadArea.addEventListener("dragover", function (e) {
+                    e.preventDefault();
+                    uploadArea.classList.add("drag-over");
+                });
+
+                uploadArea.addEventListener("dragleave", function () {
+                    uploadArea.classList.remove("drag-over");
+                });
+
+                uploadArea.addEventListener("drop", function (e) {
+                    e.preventDefault();
+                    uploadArea.classList.remove("drag-over");
+
+                    if (e.dataTransfer.files.length) {
+                        handleFileSelection(e.dataTransfer.files[0]);
+                    }
+                });
+
+                // File input change event
+                fileInput.addEventListener("change", function () {
+                    // e.stopImmediatePropagation();
+                    if (this.files.length) {
+                        handleFileSelection(this.files[0]);
+                    }
+                });
+
+                // Upload area click event
+                uploadArea.addEventListener("click", function () {
+                    e.stopPropagation();
+                    fileInput.click();
+                });
+
+                // Remove image button
+                removeImage.addEventListener("click", function (e) {
+                    e.stopPropagation();
+                    resetImageSelection();
+                });
+
+                // Send to API button
+                sendToApi.addEventListener("click", function () {
+                    if (!selectedFile) {
+                        showNotification(
+                            "Please select an image before sending!",
+                            "error",
+                        );
+                        return;
+                    }
+
+                    sendImageToApi();
+                });
+
+                // Toggle result visibility
+                toggleResult.addEventListener("click", function () {
+                    if (!selectedFile) {
+                        showNotification(
+                            "Please upload and send the image to the API first!",
+                            "error",
+                        );
+                        return;
+                    }
+
+                    isResultVisible = !isResultVisible;
+
+                    if (isResultVisible) {
+                        resultContainer.classList.remove("h-0");
+                        resultContainer.classList.add("h-auto", "pb-4");
+                        toggleResult.innerHTML =
+                            '<i class="fas fa-eye-slash mr-1"></i> Hide results';
+                        emptyResult.classList.add("hidden");
+                    } else {
+                        resultContainer.classList.remove("h-auto", "pb-4");
+                        resultContainer.classList.add("h-0");
+                        toggleResult.innerHTML =
+                            '<i class="fas fa-eye mr-1"></i> Show result';
+                    }
+                });
+
+                // Toggle raw JSON visibility
+
+                // Copy result button
+                copyResult.addEventListener("click", function () {
+                    const textToCopy = resultContent.textContent;
+                    if (!textToCopy || textToCopy.includes("No response yet")) {
+                        showNotification("No content to copy", "error");
+                        return;
+                    }
+
+                    navigator.clipboard
+                        .writeText(textToCopy)
+                        .then(() => {
+                            const originalText = copyResult.innerHTML;
+                            copyResult.innerHTML =
+                                '<i class="fas fa-check mr-1"></i> Copied';
+                            copyResult.classList.remove(
+                                "border-primary-blue",
+                                "text-primary-blue",
+                            );
+                            copyResult.classList.add(
+                                "border-green-500",
+                                "text-green-600",
+                            );
+
+                            setTimeout(() => {
+                                copyResult.innerHTML = originalText;
+                                copyResult.classList.remove(
+                                    "border-green-500",
+                                    "text-green-600",
+                                );
+                                copyResult.classList.add(
+                                    "border-primary-blue",
+                                    "text-primary-blue",
+                                );
+                            }, 2000);
+                        })
+                        .catch((err) => {
+                            console.error("Failed to copy text: ", err);
+                            showNotification("Failed to copy text", "error");
+                        });
+                });
+
+                // Download result button
+                downloadResult.addEventListener("click", function () {
+                    const textToDownload = resultContent.textContent;
+                    if (
+                        !textToDownload ||
+                        textToDownload.includes("Not response yet")
+                    ) {
+                        showNotification("No content to download", "error");
+                        return;
+                    }
+
+                    const blob = new Blob([textToDownload], {
+                        type: "text/plain",
+                    });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = `api-result-${new Date().toISOString().slice(0, 10)}.txt`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+
+                    showNotification("Downloaded results", "success");
+                });
+
+                // Clear result button
+                clearResult.addEventListener("click", function () {
+                    resultContent.innerHTML = `
+                    <div class="text-center py-10 text-gray-500">
+                        <i class="fas fa-code text-4xl mb-3"></i>
+                        <p>Results from the API will be displayed here after successfully submitting the image.</p>
+                    </div>`;
+
+                    resultLength.textContent = "0";
+                    apiStatus.classList.add("hidden");
+
+                    showNotification("Deleted results", "info");
+                });
+
+                // Function to handle file selection
+                function handleFileSelection(file) {
+                    // Check if file is an image
+                    if (!file.type.match("image.*")) {
+                        showNotification(
+                            "Please select an image file (JPG, PNG, GIF, WebP)",
+                            "error",
+                        );
+                        return;
+                    }
+
+                    // Check file size (10MB limit)
+                    if (file.size > 10 * 1024 * 1024) {
+                        showNotification(
+                            "Image file is too large. Please select a file smaller than 10MB.",
+                            "error",
+                        );
+                        return;
+                    }
+
+                    selectedFile = file;
+
+                    // Show preview
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        previewImage.src = e.target.result;
+                        imagePreview.classList.remove("hidden");
+                        fileName.textContent = file.name;
+
+                        // Auto send to API if checkbox is checked
+                        if (autoProcessCheckbox.checked) {
+                            setTimeout(() => {
+                                sendImageToApi();
+                            }, 500);
+                        }
+                    };
+                    reader.readAsDataURL(file);
+                }
+
+                // Function to reset image selection
+                function resetImageSelection() {
+                    selectedFile = null;
+                    fileInput.value = "";
+                    imagePreview.classList.add("hidden");
+                    previewImage.src = "";
+
+                    // Reset result section
+                    resultContainer.classList.remove("h-auto", "pb-4");
+                    resultContainer.classList.add("h-0");
+                    emptyResult.classList.remove("hidden");
+                    isResultVisible = false;
+                    toggleResult.innerHTML =
+                        '<i class="fas fa-eye mr-1"></i> Show result';
+
+                    showNotification("Deleted selected image", "info");
+                }
+
+                // Function to send image to API
+                async function sendImageToApi() {
+                    if (!selectedFile) {
+                        showNotification(
+                            "Please select an image before sending!",
+                            "error",
+                        );
+                        return;
+                    }
+
+                    // Show processing indicator
+                    processingIndicator.classList.remove("hidden");
+                    sendToApi.disabled = true;
+                    apiStatus.classList.add("hidden");
+
+                    // Show result section
+                    isResultVisible = true;
+                    resultContainer.classList.remove("h-0");
+                    resultContainer.classList.add("h-auto", "pb-4");
+                    toggleResult.innerHTML =
+                        '<i class="fas fa-eye-slash mr-1"></i> Hide result';
+                    emptyResult.classList.add("hidden");
+
+                    // Prepare form data
+                    const formData = new FormData();
+                    formData.append("image", selectedFile);
+
+                    // Start time tracking
+                    const startTime = performance.now();
+
+                    try {
+                        // Send request to API
+                        const response = await fetch(apiEndpoint, {
+                            method: "POST",
+                            body: formData,
+                        });
+
+                        // Calculate response time
+                        const endTime = performance.now();
+                        const timeTaken = (endTime - startTime).toFixed(0);
+
+                        // Process response
+                        const responseData = await response.text();
+
+                        // Update API status
+                        updateApiStatus(response.status, timeTaken);
+
+                        // Update result content
+                        updateResultContent(responseData, timeTaken);
+
+                        showNotification(
+                            "Successfully sent image to API!",
+                            "success",
+                        );
+                    } catch (error) {
+                        console.error("API Error:", error);
+
+                        // Update API status for error
+                        updateApiStatus(
+                            0,
+                            (performance.now() - startTime).toFixed(0),
+                        );
+
+                        // Show error in result
+                        resultContent.innerHTML = `
+                        <div class="p-4 bg-red-50 border border-red-200 rounded-lg">
+                            <h4 class="font-medium text-primary-red mb-2 flex items-center">
+                                <i class="fas fa-exclamation-triangle mr-2"></i>
+                                Connection error to API
+                            </h4>
+                            <p class="text-gray-700 mb-2">Không thể kết nối đến API endpoint:</p>
+                            <code class="block bg-red-100 p-2 rounded text-sm">${apiEndpoint}</code>
+                            <p class="text-gray-700 mt-2">Error details: ${error.message}</p>
+                        </div>`;
+
+                        // Update raw JSON
+
+                        resultLength.textContent = "0";
+
+                        showNotification("Connection error to API", "error");
+                    } finally {
+                        // Hide processing indicator
+                        processingIndicator.classList.add("hidden");
+                        sendToApi.disabled = false;
+                    }
+                }
+
+                // Function to update API status display
+                function updateApiStatus(status, time) {
+                    apiStatus.classList.remove("hidden");
+                    statusCode.textContent = status;
+                    responseTime.textContent = `${time}ms`;
+
+                    if (status === 200) {
+                        statusIndicator.textContent = "Success";
+                        statusIndicator.className =
+                            "px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800";
+                        apiStatus.classList.remove(
+                            "border-red-200",
+                            "bg-red-50",
+                        );
+                        apiStatus.classList.add(
+                            "border-green-200",
+                            "bg-green-50",
+                        );
+                    } else if (status >= 400) {
+                        statusIndicator.textContent = "Error";
+                        statusIndicator.className =
+                            "px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800";
+                        apiStatus.classList.remove(
+                            "border-green-200",
+                            "bg-green-50",
+                        );
+                        apiStatus.classList.add("border-red-200", "bg-red-50");
+                    } else {
+                        statusIndicator.textContent = "Undefined";
+                        statusIndicator.className =
+                            "px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800";
+                        apiStatus.classList.remove(
+                            "border-green-200",
+                            "bg-green-50",
+                            "border-red-200",
+                            "bg-red-50",
+                        );
+                        apiStatus.classList.add(
+                            "border-yellow-200",
+                            "bg-yellow-50",
+                        );
+                    }
+                }
+
+                // Function to update result content
+                function updateResultContent(data, timeTaken) {
+                    const now = new Date();
+                    resultTimestamp.textContent = `Cập nhật: ${now.toLocaleDateString("vi-VN")} ${now.toLocaleTimeString("vi-VN")}`;
+
+                    // Format the result based on API response structure
+                    let resultText = "";
+                    let charCount = 0;
+
+                    // Check common response formats
+                    if (data.text) {
+                        // If API returns a 'text' field
+                        resultText = data.text;
+                    } else if (data.result) {
+                        // If API returns a 'result' field
+                        resultText =
+                            typeof data.result === "string"
+                                ? data.result
+                                : JSON.stringify(data.result, null, 2);
+                    } else if (data.message) {
+                        // If API returns a 'message' field
+                        resultText = data.message;
+                    } else if (
+                        data.predictions ||
+                        data.classes ||
+                        data.labels
+                    ) {
+                        // If API returns prediction results
+                        resultText = `IMAGE ANALYSIS RESULTS\n\n`;
+                        resultText += `Processing Time: ${timeTaken}ms\n`;
+                        resultText += `At: ${now.toLocaleString("vi-VN")}\n\n`;
+
+                        if (data.predictions) {
+                            resultText += `Predict:\n`;
+                            if (Array.isArray(data.predictions)) {
+                                data.predictions.forEach((pred, idx) => {
+                                    resultText += `${idx + 1}. ${pred.label || pred.class}: ${(pred.confidence * 100).toFixed(2)}%\n`;
+                                });
+                            }
+                        }
+
+                        if (data.classes) {
+                            resultText += `\nCategory:\n`;
+                            data.classes.forEach((cls, idx) => {
+                                resultText += `${idx + 1}. ${cls}\n`;
+                            });
+                        }
+                    } else {
+                        // Fallback: display entire JSON
+                        resultText = data;
+                    }
+
+                    // Update result content
+                    data = data.replace(
+                        /\*{1,4}(.*?)\*{1,4}/g,
+                        "<strong>$1</strong>",
+                    );
+                    const parsed = JSON.parse(data);
+                    data = data.replace(
+                        /\*{2,4}(.*?)\*{2,4}/g,
+                        "<strong>$1</strong>",
+                    );
+                    resultContent.innerHTML = parsed;
+                    charCount = resultText.length;
+                    resultLength.textContent = charCount;
+                }
+
+                // Function to show notification
+                function showNotification(message, type = "info") {
+                    // Remove existing notifications
+                    const existingNotifications =
+                        document.querySelectorAll(".notification");
+                    existingNotifications.forEach((notification) => {
+                        notification.remove();
+                    });
+
+                    // Create notification element
+                    const notification = document.createElement("div");
+                    notification.className = `notification fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg max-w-sm transform transition-transform duration-300 translate-y-0`;
+
+                    // Set color based on type
+                    if (type === "success") {
+                        notification.classList.add(
+                            "bg-green-100",
+                            "border",
+                            "border-green-200",
+                            "text-green-800",
+                        );
+                    } else if (type === "error") {
+                        notification.classList.add(
+                            "bg-red-100",
+                            "border",
+                            "border-red-200",
+                            "text-red-800",
+                        );
+                    } else if (type === "warning") {
+                        notification.classList.add(
+                            "bg-yellow-100",
+                            "border",
+                            "border-yellow-200",
+                            "text-yellow-800",
+                        );
+                    } else {
+                        notification.classList.add(
+                            "bg-blue-100",
+                            "border",
+                            "border-blue-200",
+                            "text-blue-800",
+                        );
+                    }
+
+                    // Add icon based on type
+                    let icon = "info-circle";
+                    if (type === "success") icon = "check-circle";
+                    if (type === "error") icon = "exclamation-circle";
+                    if (type === "warning") icon = "exclamation-triangle";
+
+                    notification.innerHTML = `
+                    <div class="flex items-center">
+                        <i class="fas fa-${icon} mr-3"></i>
+                        <span>${message}</span>
+                    </div>
+                `;
+
+                    // Add to page
+                    document.body.appendChild(notification);
+
+                    // Auto remove after 3 seconds
+                    setTimeout(() => {
+                        notification.classList.add("translate-y-[-100px]");
+                        setTimeout(() => {
+                            if (notification.parentNode) {
+                                notification.parentNode.removeChild(
+                                    notification,
+                                );
+                            }
+                        }, 300);
+                    }, 3000);
+                }
+
+                // Initialize
+                currentApiUrl.textContent = apiEndpoint;
+            });
+        </script>
+    </body>
+</html>
